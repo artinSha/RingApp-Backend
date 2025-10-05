@@ -229,11 +229,14 @@ def _gemini_opening_for_scenario(scenario_key: str) -> str:
     s = SCENARIOS.get(scenario_key, {})
     setting = s.get("setting", "")
     role = s.get("role", "")
+    stakes = s.get("stakes", "")
     prompt = (
         "Start the scene now with one short, natural line (<=30 words). "
         "Speak like a human. Do not explain rules.\n"
+        "Dive straight into the stakes of the scene.\n"
         f"Setting: {setting}\n"
-        f"Role: {role}"
+        f"Role: {role}\n"
+        f"Stakes: {stakes}"
     )
     try:
         resp = chat.send_message(prompt)
@@ -343,6 +346,21 @@ def process_audio():
         "ai_text": ai_text,
         "ai_audio_b64": ai_audio_b64
     }), 200
+
+#End call endpoint to send conversation
+@app.route("/end_call", methods = ["POST"])
+def end_call():
+    # Get form data
+    conv_id = request.form.get("conv_id")
+
+    if not conv_id:
+        return jsonify({"error": "conv_id is required"}), 400
+
+    # Verify conversation exists
+    conversation = conversations_collection.find_one({"_id": ObjectId(conv_id)})
+    if not conversation:
+        return jsonify({"error": "Invalid conversation ID"}), 400
+
 
 
 if __name__ == "__main__":
