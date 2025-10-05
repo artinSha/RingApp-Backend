@@ -1,7 +1,7 @@
 {
   "zombie_apocalypse": {
     "title": "🧟 Zombie Apocalypse Survival",
-    "setting": "Inside a shopping mall during a sudden zombie outbreak; echoing halls, shuttered stores, frightened survivors.",
+    "setting": "Inside a shopping mall during a sudden zombie outbreak, shuttered stores, frightened survivors.",
     "stakes": "Barricade safely, avoid infection, coordinate with survivors, and find an exit or shelter.",
     "role": "AI is a fellow survivor coordinating actions; the user is another survivor making quick decisions."
   },
@@ -13,7 +13,7 @@
   },
   "pizza_order_mixup": {
     "title": "🍕 Pizza Order Mix-up",
-    "setting": "The AI (SpeakFast) is calling the learner as a staff member from a busy pizzeria. Background kitchen noise, phones ringing, and chatter fill the space.",
+    "setting": "The AI (SpeakFast) is calling the learner as a staff member from a busy pizzeria",
     "stakes": "The restaurant realized they delivered the wrong order and needs to fix it fast — either redeliver, refund, or apologize while keeping the customer calm and satisfied.",
     "role": "AI is the pizzeria staff calling to apologize and correct the mix-up; the user is the customer responding to the call."
   }
