@@ -207,12 +207,17 @@ def _extract_user_utterances(conversation_doc, max_chars: int = 6000) -> str:
     return "\n".join(f"- {u}" for u in buf) if buf else "(no user speech captured)"
 
 
-def _build_feedback_prompt(scenario_key: str, user_utterances: str) -> str:
+def _build_feedback_prompt(convo_id: str, scenario_key: str, user_utterances: str) -> str:
     """
     ESL tutor-style evaluation prompt.
     Returns strictly-JSON guidance: CEFR, TOEFL estimate, strengths, issues,
     concise corrections, and short practice tips.
     """
+    # Retrieve conversation from DB
+    convo = conversations_collection.find_one({"_id": ObjectId(conv_id)})
+    if not convo:
+        raise ValueError("Conversation not found in database.")
+    
     s = SCENARIOS.get(scenario_key, {})
     title = s.get("title", scenario_key)
     setting = s.get("setting", "")
@@ -220,28 +225,22 @@ def _build_feedback_prompt(scenario_key: str, user_utterances: str) -> str:
     role = s.get("role", "")
 
     return (
-        "You are an experienced ESL tutor. Evaluate the learner's English based ONLY on the text below.\n"
-        "Keep your feedback practical, supportive, and very concise (≤ 220 words total across all fields).\n"
-        "Focus on: grammar, fluency (naturalness/flow), and vocabulary choice (wording/precision).\n\n"
+        "You are an ESL evaluator evaluating a student's speaking ability in this scenario. Return strictly valid JSON with **only** these keys:\n"
+        "{\n"
+        '  "success_percentage": int (0–100),\n'
+        '  "grammar_feedback": [{"before": str, "after": str}, ...],\n'
+        '  "grammar_issues": int,\n'
+        '  "turns": int,\n'
+        '  "conversation": full conversation object from MongoDB\n'
+        "}\n\n"
+        "Rules: No prose, no comments, no backticks.\n"
+        "Evaluate concisely based on the user’s speech quality.\n\n"
         f"Scenario: {title}\n"
         f"Setting: {setting}\n"
         f"Stakes: {stakes}\n"
         f"Roles: {role}\n\n"
-        "Learner's utterances (chronological):\n"
-        f"{user_utterances}\n\n"
-        "Return JSON with the following keys ONLY (no extra text):\n"
-        "{\n"
-        '  "cefr_estimate": "A1|A2|B1|B2|C1|C2",\n'
-        '  "toefl_estimate": {"score_range": "0-120 string like \\"72-85\\"", "confidence": "low|medium|high"},\n'
-        '  "strengths": ["short bullet", "..."],\n'
-        '  "issues": ["short bullet describing a consistent issue", "..."],\n'
-        '  "corrections": [\n'
-        '    {"before": "learner sentence or fragment", "after": "corrected, natural version"},\n'
-        '    {"before": "...", "after": "..."}\n'
-        '  ],\n'
-        '  "tips": ["1 concise practice tip", "another short tip", "third short tip"]\n'
-        "}\n"
-        "CRITICAL: Respond with JSON ONLY. Do not include backticks or any explanation."
+        f"Learner’s utterances:\n{user_utterances}\n\n"
+        f"Conversation object:\n{json.dumps(convo, default=str)}"
     )
 
 
@@ -367,7 +366,7 @@ def end_call():
 
     # 2) Build feedback prompt (scenario + only user lines)
     user_utterances = _extract_user_utterances(convo)
-    prompt = _build_feedback_prompt(scenario_key, user_utterances)
+    prompt = _build_feedback_prompt(conv_id, scenario_key, user_utterances)
 
     # 3) Ask Gemini for JSON feedback using the SCENARIO model
     try:
@@ -389,7 +388,7 @@ def end_call():
         # Model didn’t return pure JSON; store raw text for debugging
         grammar_feedback = {"raw": feedback_text}
 
-    # 5) Save feedback back into the conversation
+    # OPTIONAL: Save feedback back into the conversation
     conversations_collection.update_one(
         {"_id": ObjectId(conv_id)},
         {"$set": {"grammar_feedback": grammar_feedback}}
