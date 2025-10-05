@@ -59,7 +59,7 @@ Speak ONLY in natural, spoken English. Do NOT write stage directions or placehol
 Refer to the learner as "you", not by name.
 
 Hard rules (must follow):
-- No brackets or parenthetical content: do NOT use (), [], {}, <> anywhere.
+- No brackets or parenthetical content: do NOT use (), [], <> anywhere.
 - No placeholders like [name], [address], <pause>, *sighs*, etc.
 - No speaker labels or prefixes: never write "Oli:", "AI:", "Assistant:", "System:", "User:", or "You:".
 - No emojis. Plain text only.
