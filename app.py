@@ -11,6 +11,8 @@ import base64
 # Load environment variables
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+ELEVEN_VOICE_ID = os.getenv("ELEVEN_VOICE_ID")
 
 # Flask app
 app = Flask(__name__)
