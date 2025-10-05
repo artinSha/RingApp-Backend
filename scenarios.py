@@ -31,7 +31,7 @@ def get_model_for_scenario(scenario_key: str = "General"):
         sys_inst = build_system_instruction(SCENARIOS[scenario_key])
     else:
         sys_inst = (
-            "You are 'Ring', a friendly ESL conversation partner. "
+            "You are 'oli', a friendly ESL conversation partner. "
             "Reply naturally and briefly, keeping sentences simple and human."
         )
 
