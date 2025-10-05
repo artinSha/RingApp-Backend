@@ -55,7 +55,8 @@ def gemini_opening_for_scenario(scenario_key: str) -> str:
 
     prompt = (
         "Start the call with ONE short, natural spoken line (≤ 35 words). "
-        "NO brackets or parentheses of any kind, NO placeholders, NO stage directions, NO emojis. "
+        "Do NOT include any speaker labels (no 'AI:', 'You:', etc.). "
+        "NO brackets/parentheses/placeholders; NO stage directions; NO emojis. "
         "Just talk like a person on the phone.\n"
         f"Setting: {setting}\n"
         f"Role: {role}\n"

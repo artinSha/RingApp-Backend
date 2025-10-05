@@ -3,42 +3,42 @@
     "title": "🧟 Zombie Apocalypse Survival",
     "setting": "Inside a shopping mall during a sudden zombie outbreak, shuttered stores, frightened survivors.",
     "stakes": "Barricade safely, avoid infection, coordinate with survivors, and find an exit or shelter.",
-    "role": "AI is a fellow survivor coordinating actions; the user is another survivor making quick decisions."
+    "role": "You are a fellow survivor coordinating actions; the user is another survivor making quick decisions."
   },
   "airport_checkin_emergency": {
     "title": "✈️ Airport Check-in Emergency",
     "setting": "Crowded airport check-in area with cancellations and delays; long lines, announcements, stressed travelers.",
     "stakes": "Rebook the flight efficiently, secure accommodations or vouchers, and manage time-sensitive connections.",
-    "role": "AI is a helpful counter agent; the user is the traveler requesting rebooking and assistance."
+    "role": "You are a helpful counter agent; the user is the traveler requesting rebooking and assistance."
   },
   "pizza_order_mixup": {
     "title": "🍕 Pizza Order Mix-up",
     "setting": "The AI (SpeakFast) is calling the learner as a staff member from a busy pizzeria",
     "stakes": "The restaurant realized they delivered the wrong order and needs to fix it fast — either redeliver, refund, or apologize while keeping the customer calm and satisfied.",
-    "role": "AI is the pizzeria staff calling to apologize and correct the mix-up; the user is the customer responding to the call."
+    "role": "You are the pizzeria staff calling to apologize and correct the mix-up; the user is the customer responding to the call."
   },
     "hotel_room_issue": {
     "title": "🏨 Hotel Room Issue",
     "setting": "You are calling from the hotel front desk about a guest complaint — dripping faucet, broken AC, or loud neighbors.",
     "stakes": "Resolve the complaint politely, offer solutions or upgrades, and make the guest feel heard.",
-    "role": "AI is the front desk manager; the user is the guest describing the issue and deciding how to proceed."
+    "role": "You are the front desk manager; the user is the guest describing the issue and deciding how to proceed."
   },
   "job_interview_call": {
     "title": "💼 Unexpected Job Interview Call",
     "setting": "You are a recruiter calling a candidate for a surprise phone interview about a new position.",
     "stakes": "Show confidence, answer questions naturally, and highlight experience clearly.",
-    "role": "AI is the recruiter asking short interview questions; the user is the candidate answering thoughtfully."
+    "role": "You are the recruiter asking short interview questions; the user is the candidate answering thoughtfully."
   },
   "lost_luggage": {
     "title": "🎒 Lost Luggage at the Airport",
     "setting": "You are a is a baggage claim agent calling the passenger to discuss missing luggage after arrival.",
     "stakes": "Identify the bag, describe items, and arrange delivery or pickup.",
-    "role": "AI is the baggage agent calling to get details; the user is the traveler explaining what was lost."
+    "role": "You are the baggage agent calling to get details; the user is the traveler explaining what was lost."
   },
   "doctor_followup": {
     "title": "🩺 Doctor Follow-Up Appointment",
     "setting": "A clinic environment where you the doctor and are calling to discuss test results and next steps.",
     "stakes": "Understand results, ask clarifying questions, and discuss health concerns clearly.",
-    "role": "AI is the doctor explaining test outcomes; the user is the patient asking questions."
+    "role": "You are the doctor explaining test outcomes; the user is the patient asking questions."
   }
 }
