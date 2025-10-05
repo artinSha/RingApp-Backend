@@ -6,7 +6,21 @@ import os
 from bson.objectid import ObjectId
 from flask_cors import CORS
 import requests
+import tempfile
 import base64
+from werkzeug.utils import secure_filename
+import google.generativeai as genai
+
+from m4atowav import convert_m4a_to_wav 
+from STT import transcribe_wav
+from gemini import (
+    configure_genai,
+    ensure_model_exists,
+    build_system_instruction,
+    load_scenarios,
+    MODEL_ID,
+    SCENARIOS_PATH,
+)
 
 
 # Load environment variables
@@ -98,27 +112,110 @@ def start_call():
     return jsonify(payload), 201
 
 
+ALLOWED_EXTENSIONS = {"m4a", "wav"}
+
+def _allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
 # -------------------------------
 # Helper: Transcription of user audio using Google Cloud STT
 # -------------------------------
 def transcribe_audio_stt(audio_file):
     """
-    Replace with Gemini/OpenAI transcription later.
-    Currently just returns dummy text.
+    Accepts a werkzeug FileStorage (uploaded 'audio').
+    If .m4a: converts to .wav with convert_m4a_to_wav(), then transcribes with transcribe_wav().
+    If .wav: transcribes directly.
+    Returns transcript string.
     """
-    return "This is a placeholder transcription of user audio."
+    if not audio_file or not getattr(audio_file, "filename", ""):
+        raise RuntimeError("No audio file provided.")
+
+    filename = secure_filename(audio_file.filename)
+    if not _allowed_file(filename):
+        raise RuntimeError("Unsupported file type. Please upload .m4a or .wav.")
+
+    # Save the uploaded file to a secure temp path
+    in_ext = os.path.splitext(filename)[1].lower()  # ".m4a" or ".wav"
+    tmp_in_fd, tmp_in_path = tempfile.mkstemp(suffix=in_ext)
+    os.close(tmp_in_fd)
+    audio_file.save(tmp_in_path)
+
+    wav_path = None
+    try:
+        if in_ext == ".m4a":
+            # Convert to .wav (mono, 16kHz) using your m4atowav.py
+            wav_path = convert_m4a_to_wav(tmp_in_path)
+        else:
+            # Already wav — use the saved path directly
+            wav_path = tmp_in_path
+
+        # Transcribe using your STT.py
+        transcript = transcribe_wav(wav_path) or ""
+        return transcript.strip()
+
+    finally:
+        # Cleanup temp files
+        try:
+            if tmp_in_path and os.path.isfile(tmp_in_path):
+                os.remove(tmp_in_path)
+        except Exception:
+            pass
+        if wav_path and wav_path != tmp_in_path:
+            try:
+                if os.path.isfile(wav_path):
+                    os.remove(wav_path)
+            except Exception:
+                pass
 
 
-# -------------------------------
-# Helper: Generates AI response based on string of conversation history thus far
-# -------------------------------
-def generate_ai_text(conversation_context):
-    """
-    Replace with Gemini API call later.
-    Currently just returns dummy AI text.
-    """
-    return "Great! You should look for a safe spot immediately."
+# ------------------------- Gemini AI setup
+# -------------------------
+configure_genai()  # uses GEMINI_API or GEMINI_API_KEY
 
+try:
+    SCENARIOS = load_scenarios(SCENARIOS_PATH)
+except Exception:
+    SCENARIOS = {}
+
+_model_cache = {}
+
+def _get_model_for_scenario(scenario_key: str = "General"):
+    """
+    Return a Gemini model configured with a scenario-specific system instruction.
+    Cached per (MODEL_ID, scenario_key).
+    """
+    if scenario_key in SCENARIOS:
+        sys_inst = build_system_instruction(SCENARIOS[scenario_key])
+    else:
+        sys_inst = (
+            "You are 'Ring', a friendly, realistic speaking partner for an ESL learner. "
+            "Reply in simple, natural English (<= 35 words), react to the user's last message, "
+            "and continue the scene briefly with a mix of statements and questions."
+        )
+
+    cache_key = f"{MODEL_ID}::{scenario_key}"
+    model = _model_cache.get(cache_key)
+    if model is None:
+        model = genai.GenerativeModel(MODEL_ID, system_instruction=sys_inst)
+        _model_cache[cache_key] = model
+    return model
+
+def generate_ai_text(conversation_context: str, scenario_key: str = "General") -> str:
+    """
+    Generates the next AI reply from Gemini using a single string prompt.
+    This keeps compatibility with your current /process_audio call.
+    """
+    try:
+        model = _get_model_for_scenario(scenario_key)
+        chat = model.start_chat()
+        resp = chat.send_message(conversation_context or "...")
+        ai_text = (getattr(resp, "text", "") or "").strip()
+        if not ai_text:
+            ai_text = "I couldn’t quite hear that. Could you say it again, briefly?"
+        return ai_text
+    except Exception as e:
+        # Don't crash your request path if Gemini misconfigures
+        return f"(Gemini error: {e})"
 
 # -------------------------------
 # Endpoint: process user audio
@@ -207,4 +304,6 @@ def process_audio():
 
 
 if __name__ == "__main__":
+
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
