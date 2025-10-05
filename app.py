@@ -239,7 +239,7 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
         '   "turns": int (number of user utterances analyzed),\n'
         "}\n\n"
         "Rules and guidance:\n"
-        "- Only identify grammar or phrasing issues that are clearly incorrect — do not overcorrect.\n"
+        "- Only identify grammar or phrasing issues that are clearly incorrect — do not overcorrect - so try to ignore punctuations differences.\n"
         "- DO NOT invent errors. Only include grammar or phrasing errors in the following list: (tense, agreement, prepositions, articles, word order, unnatural phrasing).\n"
         "- If all utterances are grammatically correct and natural, set grammar_feedback to null and grammar_issues to 0.\n"
         "- Use simple, natural English corrections.\n"
