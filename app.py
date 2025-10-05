@@ -170,6 +170,7 @@ def generate_ai_text(conversation_context):
     return "Great! You should look for a safe spot immediately."
 
 
+
 # -------------------------------
 # Endpoint: process user audio
 # -------------------------------
@@ -259,25 +260,6 @@ def process_audio():
 
 
 if __name__ == "__main__":
-    # --- Uncomment ONE of these modes ---
-    
-    # 1️⃣ NORMAL SERVER MODE (Flask app)
-    #app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
-    # 2️⃣ TEST MODE: Local m4a-to-text test
-    test_path = "Recording (3).m4a"  # Path to a local .m4a file you want to test
-    print(f"Testing transcription on: {test_path}")
-
-    # We simulate the Flask `FileStorage` object by opening it directly
-    class DummyFile:
-        def __init__(self, path):
-            self.filename = os.path.basename(path)
-            self._path = path
-        def save(self, dst):
-            import shutil
-            shutil.copy(self._path, dst)
-
-    dummy_audio = DummyFile(test_path)
-    result = transcribe_audio_stt(dummy_audio)
-    print(result)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
