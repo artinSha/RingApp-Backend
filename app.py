@@ -7,14 +7,13 @@ from bson.objectid import ObjectId
 from flask_cors import CORS
 import requests
 import base64
-import uuid
-import io
+
 
 # Load environment variables
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-ELEVEN_VOICE_ID = os.getenv("ELEVEN_VOICE_ID")
+
+from TTS import elevenlabs_tts_get_bytes
 
 # Flask app
 app = Flask(__name__)
@@ -120,61 +119,6 @@ def generate_ai_text(conversation_context):
     """
     return "Great! You should look for a safe spot immediately."
 
-
-def elevenlabs_tts_get_bytes(text, voice_id=None) -> bytes:
-    """Call ElevenLabs and return raw mp3 bytes. Raises on failure."""
-    voice = voice_id or ELEVEN_VOICE_ID
-    if not ELEVENLABS_API_KEY or not voice:
-        raise RuntimeError("ELEVENLABS_API_KEY or ELEVEN_VOICE_ID not set in env")
-
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}"
-    headers = {
-        "xi-api-key": ELEVENLABS_API_KEY,
-        "Accept": "audio/mpeg",            # request mp3
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "text": text,
-        "voice_settings": {"stability": 0.6, "similarity_boost": 0.75}
-    }
-
-    resp = requests.post(url, headers=headers, json=payload, stream=True)
-    if resp.status_code != 200:
-        raise RuntimeError(f"ElevenLabs TTS failed ({resp.status_code}): {resp.text}")
-
-    return resp.content
-
-
-# def elevenlabs_tts_save_and_get_url(text, voice_id=None):
-#     """Get bytes and save as static/audio/<uuid>.mp3, return full public URL."""
-#     audio_bytes = elevenlabs_tts_get_bytes(text, voice_id=voice_id)
-
-#     audio_dir = os.path.join(app.root_path, "static", "audio")
-#     os.makedirs(audio_dir, exist_ok=True)
-#     filename = f"{uuid.uuid4().hex}.mp3"
-#     filepath = os.path.join(audio_dir, filename)
-
-#     with open(filepath, "wb") as f:
-#         f.write(audio_bytes)
-
-#     # Build full URL using request.host_url when called from a request context
-#     # If you deploy behind a domain, request.host_url will be like "https://your-app.up.railway.app/"
-#     return f"{request.host_url.rstrip('/')}/static/audio/{filename}"
-
-# -------------------------------
-# Helper: ElevenLabs TTS
-# -------------------------------
-# def elevenlabs_tts(text):
-#     url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVEN_VOICE_ID}"
-#     headers = {
-#         "xi-api-key": ELEVENLABS_API_KEY,
-#         "Content-Type": "application/json"
-#     }
-#     payload = {"text": text}
-#     response = requests.post(url, headers=headers, json=payload)
-#     if response.status_code != 200:
-#         raise RuntimeError(f"TTS failed: {response.text}")
-#     return response.content  # returns bytes
 
 # -------------------------------
 # Endpoint: process user audio
