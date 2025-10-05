@@ -303,6 +303,16 @@ def process_audio():
     }), 200
 
 
+
+#Test endpoint for ffmpeg
+@app.route("/ffmpeg_check")
+def ffmpeg_check():
+    try:
+        out = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
+        return out.stdout
+    except Exception as e:
+        return str(e)
+
 if __name__ == "__main__":
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
