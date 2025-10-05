@@ -429,10 +429,19 @@ def end_call():
     # Only keep the conversation array, not metadata
     conversation_array = convo.get("conversation", [])
 
-    return jsonify({
+    response = {
         "conversation_id": conv_id,
         "grammar_feedback": grammar_feedback,
         "conversation": conversation_array
+    }
+
+    return jsonify({
+        "scenario": "test",
+        "userTranscript": [i["user_text"] for i in conversation_array],
+        "aiTranscript": [i["ai_text"] for i in conversation_array],
+        "grammarErrors": [{"error": i["before"], "correction": i["after"]} for i in grammar_feedback["grammar_feedback"]],
+        "score": grammar_feedback["success_percentage"],
+        "encouragement": "filler" 
     }), 200
 
 
