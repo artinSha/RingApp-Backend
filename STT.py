@@ -1,5 +1,6 @@
 import io, os
 from google.cloud import speech_v2
+import json
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
