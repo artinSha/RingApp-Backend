@@ -11,7 +11,8 @@ import base64
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
 import subprocess
-
+import json
+import random
 
 from m4atowav import convert_m4a_to_wav 
 from STT import transcribe_wav
@@ -59,6 +60,19 @@ def create_user():
     return jsonify({"user_id": str(res.inserted_id)}), 201
 
 
+def _find_scenario_key_by_title(title: str) -> str:
+    """
+    Map a human-visible title to the canonical scenario key in SCENARIOS.
+    Falls back to a random key, then 'General' if needed.
+    """
+    if not title:
+        return random.choice(list(SCENARIOS.keys())) if SCENARIOS else "General"
+    for key, val in SCENARIOS.items():
+        if val.get("title", "").lower() == title.lower():
+            return key
+    return random.choice(list(SCENARIOS.keys())) if SCENARIOS else "General"
+
+
 """
 Call this endpoint from the frontend once the user accepts the call. First message from AI is sent.
 """
@@ -66,7 +80,7 @@ Call this endpoint from the frontend once the user accepts the call. First messa
 def start_call():
     data = request.json or {}
     user_id = data.get("user_id")
-    scenario = data.get("scenario", "General")
+    scenario_title = data.get("scenario", "General")
 
     if not user_id:
         return jsonify({"error": "user_id required"}), 400
@@ -79,7 +93,7 @@ def start_call():
     # Create conversation document
     conv_doc = {
         "user_id": user_id,
-        "scenario": scenario,
+        "scenario": scenario_title,
         "conversation": [],  # store AI+user turns
         "timestamp": datetime.now(timezone.utc),  # Changed here
         "grammar_feedback": None
@@ -90,7 +104,10 @@ def start_call():
     # -----------------------
     # Always generate first AI line
     # -----------------------
-    ai_text = "Hello! This is a placeholder AI line for your scenario."
+    # Map title -> canonical scenario key, then ask Gemini for an opener
+    scenario_key = _find_scenario_key_by_title(scenario_title)
+    ai_text = _gemini_opening_for_scenario(scenario_key)
+
     # Save first AI turn
     conversations_collection.update_one(
         {"_id": ObjectId(conv_id)},
@@ -202,6 +219,29 @@ def _get_model_for_scenario(scenario_key: str = "General"):
         _model_cache[cache_key] = model
     return model
 
+def _gemini_opening_for_scenario(scenario_key: str) -> str:
+    """
+    Ask Gemini to produce the first short line for the chosen scenario.
+    """
+    model = _get_model_for_scenario(scenario_key)
+    chat = model.start_chat()
+
+    s = SCENARIOS.get(scenario_key, {})
+    setting = s.get("setting", "")
+    role = s.get("role", "")
+    prompt = (
+        "Start the scene now with one short, natural line (<=30 words). "
+        "Speak like a human. Do not explain rules.\n"
+        f"Setting: {setting}\n"
+        f"Role: {role}"
+    )
+    try:
+        resp = chat.send_message(prompt)
+        text = (getattr(resp, "text", "") or "").strip()
+        return text or "Okay, let's begin. What's happening around you right now?"
+    except Exception as e:
+        return f"(Gemini error creating opener: {e})"
+    
 def generate_ai_text(conversation_context: str, scenario_key: str = "General") -> str:
     """
     Generates the next AI reply from Gemini using a single string prompt.
@@ -305,17 +345,6 @@ def process_audio():
     }), 200
 
 
-
-#Test endpoint for ffmpeg
-@app.route("/ffmpeg_check")
-def ffmpeg_check():
-    try:
-        out = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
-        return out.stdout
-    except Exception as e:
-        return str(e)
-
 if __name__ == "__main__":
-
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
