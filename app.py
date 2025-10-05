@@ -225,20 +225,31 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
     role = s.get("role", "")
 
     return (
-        "You are an ESL evaluator evaluating a student's speaking ability in this scenario. Return strictly valid JSON with **only** these keys:\n"
+        "You are an experienced ESL evaluator assessing a student's spoken English accuracy, "
+        "grammar, and fluency in the given scenario. Analyze the learner’s utterances and respond "
+        "STRICTLY with valid JSON, using only the keys below — no prose, no markdown, and no explanations.\n\n"
+        "Your JSON MUST follow this schema exactly:\n"
         "{\n"
         '  "success_percentage": int (0–100),\n'
-        '  "grammar_feedback": [{"before": str, "after": str}, ...],\n'
-        '  "grammar_issues": int,\n'
-        '  "turns": int,\n'
-        '  "conversation": full conversation object from MongoDB\n'
+        '  "grammar_feedback": [\n'
+        '    {"before": "<learner_sentence_with_error>", "after": "<corrected_sentence>"},\n'
+        '    ...\n'
+        "  ] OR null if there are no grammatical issues,\n"
+        '  "grammar_issues": int (number of actual grammar mistakes found, 0 if none),\n'
+        '  "turns": int (number of user utterances analyzed),\n'
+        '  "conversation": <the full conversation object from MongoDB>\n'
         "}\n\n"
-        "Rules: No prose, no comments, no backticks.\n"
-        "Evaluate concisely based on the user’s speech quality.\n\n"
-        f"Scenario: {title}\n"
-        f"Setting: {setting}\n"
-        f"Stakes: {stakes}\n"
-        f"Roles: {role}\n\n"
+        "Rules and guidance:\n"
+        "- Only identify grammar or phrasing issues that are clearly incorrect — do not overcorrect.\n"
+        "- If all utterances are grammatically correct and natural, set grammar_feedback to null and grammar_issues to 0.\n"
+        "- Use simple, natural English corrections.\n"
+        "- Base your judgment solely on learner utterances — ignore AI lines.\n"
+        "- Return the JSON directly with no text outside the object.\n\n"
+        f"Scenario Context:\n"
+        f"- Title: {title}\n"
+        f"- Setting: {setting}\n"
+        f"- Stakes: {stakes}\n"
+        f"- Roles: {role}\n\n"
         f"Learner’s utterances:\n{user_utterances}\n\n"
         f"Conversation object:\n{json.dumps(convo, default=str)}"
     )
