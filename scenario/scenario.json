@@ -16,5 +16,29 @@
     "setting": "The AI (SpeakFast) is calling the learner as a staff member from a busy pizzeria",
     "stakes": "The restaurant realized they delivered the wrong order and needs to fix it fast — either redeliver, refund, or apologize while keeping the customer calm and satisfied.",
     "role": "AI is the pizzeria staff calling to apologize and correct the mix-up; the user is the customer responding to the call."
+  },
+    "hotel_room_issue": {
+    "title": "🏨 Hotel Room Issue",
+    "setting": "AI is calling from the hotel front desk about a guest complaint — dripping faucet, broken AC, or loud neighbors.",
+    "stakes": "Resolve the complaint politely, offer solutions or upgrades, and make the guest feel heard.",
+    "role": "AI is the front desk manager; the user is the guest describing the issue and deciding how to proceed."
+  },
+  "job_interview_call": {
+    "title": "💼 Unexpected Job Interview Call",
+    "setting": "AI recruiter calling a candidate for a surprise phone interview about a new position.",
+    "stakes": "Show confidence, answer questions naturally, and highlight experience clearly.",
+    "role": "AI is the recruiter asking short interview questions; the user is the candidate answering thoughtfully."
+  },
+  "lost_luggage": {
+    "title": "🎒 Lost Luggage at the Airport",
+    "setting": "The AI is a baggage claim agent calling the passenger to discuss missing luggage after arrival.",
+    "stakes": "Identify the bag, describe items, and arrange delivery or pickup.",
+    "role": "AI is the baggage agent calling to get details; the user is the traveler explaining what was lost."
+  },
+  "doctor_followup": {
+    "title": "🩺 Doctor Follow-Up Appointment",
+    "setting": "A clinic environment where the AI (doctor) calls to discuss test results and next steps.",
+    "stakes": "Understand results, ask clarifying questions, and discuss health concerns clearly.",
+    "role": "AI is the doctor explaining test outcomes; the user is the patient asking questions."
   }
 }
