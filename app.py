@@ -443,22 +443,33 @@ def end_call():
     )
 
     # Only keep the conversation array, not metadata
+    # Only keep the conversation array, not metadata
     conversation_array = convo.get("conversation", [])
 
-    response = {
-        "conversation_id": conv_id,
-        "grammar_feedback": grammar_feedback,
-        "conversation": conversation_array
-    }
+    # Safely get pairs from the model output
+    pairs = []
+    if isinstance(grammar_feedback, dict):
+        pairs = grammar_feedback.get("grammar_feedback") or grammar_feedback.get("corrections") or []
+        if not isinstance(pairs, list):
+            pairs = []
+
+    # FILTER: keep only real differences beyond spacing/punctuation/case
+    filtered_pairs = []
+    for p in pairs:
+        before = (p.get("before") or "").strip()
+        after  = (p.get("after")  or "").strip()
+        if before and after and _clean_text(before) != _clean_text(after):
+            filtered_pairs.append({"before": before, "after": after})
 
     return jsonify({
         "scenario": "test",
-        "userTranscript": [i["user_text"] for i in conversation_array],
-        "aiTranscript": [i["ai_text"] for i in conversation_array],
-        "grammarErrors": [{"error": i["before"], "correction": i["after"]} for i in grammar_feedback["grammar_feedback"]],
-        "score": grammar_feedback["success_percentage"],
-        "encouragement": "filler" 
+        "userTranscript": [i.get("user_text") for i in conversation_array],
+        "aiTranscript": [i.get("ai_text") for i in conversation_array],
+        "grammarErrors": [{"error": i["before"], "correction": i["after"]} for i in filtered_pairs],
+        "score": grammar_feedback.get("success_percentage") if isinstance(grammar_feedback, dict) else None,
+        "encouragement": "filler"
     }), 200
+
 
 
 
