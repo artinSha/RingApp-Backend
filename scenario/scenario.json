@@ -1,18 +1,18 @@
 {
   "zombie_apocalypse": {
-    "title": "Zombie Apocalypse Survival",
+    "title": "🧟 Zombie Apocalypse Survival",
     "setting": "Inside a shopping mall during a sudden zombie outbreak; echoing halls, shuttered stores, frightened survivors.",
     "stakes": "Barricade safely, avoid infection, coordinate with survivors, and find an exit or shelter.",
     "role": "AI is a fellow survivor coordinating actions; the user is another survivor making quick decisions."
   },
   "airport_checkin_emergency": {
-    "title": "Airport Check-in Emergency",
+    "title": "✈️ Airport Check-in Emergency",
     "setting": "Crowded airport check-in area with cancellations and delays; long lines, announcements, stressed travelers.",
     "stakes": "Rebook the flight efficiently, secure accommodations or vouchers, and manage time-sensitive connections.",
     "role": "AI is a helpful counter agent; the user is the traveler requesting rebooking and assistance."
   },
   "pizza_order_mixup": {
-    "title": "Pizza Order Mix-up",
+    "title": "🍕 Pizza Order Mix-up",
     "setting": "Phone support with a busy pizzeria after a wrong delivery; background kitchen noise and ringing phones.",
     "stakes": "Get the correct order sent, handle refunds or credits, and keep the interaction polite and efficient.",
     "role": "AI is the pizzeria staff resolving the issue; the user is the customer explaining the mix-up."

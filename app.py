@@ -280,7 +280,7 @@ def process_audio():
     if not conversation:
         return jsonify({"error": "Invalid conversation ID"}), 400
 
-    #Transcribe audio using speech to text (placeholder)
+    #Transcribe audio using speech to text
     user_response = transcribe_audio_stt(audio_file)
 
     # Fetch the previous turn
