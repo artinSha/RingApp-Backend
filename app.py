@@ -117,8 +117,6 @@ ALLOWED_EXTENSIONS = {"m4a", "wav"}
 def _allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def transcribe_audio_stt(audio_file) -> str:
-
 # -------------------------------
 # Helper: Transcription of user audio using Google Cloud STT
 # -------------------------------
