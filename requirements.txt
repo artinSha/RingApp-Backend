@@ -3,3 +3,6 @@ pymongo
 python-dotenv
 flask-cors
 requests
+google-cloud-speech
+google-auth
+google-generativeai

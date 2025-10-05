@@ -44,4 +44,4 @@ def transcribe_wav(path: str):
             print("🗣️", r.alternatives[0].transcript)
 
 if __name__ == "__main__":
-    transcribe_wav("untitled.wav")
+    transcribe_wav("maybe-next-time.wav")
