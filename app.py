@@ -113,12 +113,18 @@ def start_call():
     )
 
     # Placeholder for TTS (ElevenLabs) - return None for now
-    ai_audio_url = None
+        # Generate TTS via ElevenLabs and return base64
+    try:
+        ai_audio_bytes = elevenlabs_tts_get_bytes(ai_text)
+        ai_audio_b64 = base64.b64encode(ai_audio_bytes).decode("utf-8")
+    except Exception as e:
+        print(f"TTS Error: {str(e)}")  # Log the actual error
+        return jsonify({"error": f"TTS generation failed: {str(e)}"}), 500
 
     payload = {
         "conversation_id": conv_id,
         "initial_ai_text": ai_text,
-        "initial_ai_audio_url": ai_audio_url
+        "initial_ai_audio_b64": ai_audio_b64
     }
 
     return jsonify(payload), 201
@@ -339,6 +345,7 @@ def process_audio():
         "ai_text": ai_text,
         "ai_audio_b64": ai_audio_b64
     }), 200
+
 
 #End call endpoint to send conversation
 @app.route("/end_call", methods=["POST"])
