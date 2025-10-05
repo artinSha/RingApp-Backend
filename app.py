@@ -252,6 +252,10 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
         f"Learner’s utterances:\n{user_utterances}\n\n"
     )
 
+
+def _clean_text(s: str) -> str:
+    return re.sub(r"[^\w\s]", "", s or "").strip().lower()
+
 @app.route("/process_practice", methods=["POST"])
 def process_practice():
     """
@@ -278,7 +282,7 @@ def process_practice():
         return jsonify({"error": f"Transcription failed: {e}"}), 500
 
     # Case-insensitive trimmed comparison
-    matched = spoken_text.strip().lower() == correct_text.strip().lower()
+    matched = _clean_text(spoken_text) == _clean_text(correct_text)
 
     return jsonify({
         "matched": matched,
