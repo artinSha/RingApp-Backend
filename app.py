@@ -145,21 +145,21 @@ def elevenlabs_tts_get_bytes(text, voice_id=None) -> bytes:
     return resp.content
 
 
-def elevenlabs_tts_save_and_get_url(text, voice_id=None):
-    """Get bytes and save as static/audio/<uuid>.mp3, return full public URL."""
-    audio_bytes = elevenlabs_tts_get_bytes(text, voice_id=voice_id)
+# def elevenlabs_tts_save_and_get_url(text, voice_id=None):
+#     """Get bytes and save as static/audio/<uuid>.mp3, return full public URL."""
+#     audio_bytes = elevenlabs_tts_get_bytes(text, voice_id=voice_id)
 
-    audio_dir = os.path.join(app.root_path, "static", "audio")
-    os.makedirs(audio_dir, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}.mp3"
-    filepath = os.path.join(audio_dir, filename)
+#     audio_dir = os.path.join(app.root_path, "static", "audio")
+#     os.makedirs(audio_dir, exist_ok=True)
+#     filename = f"{uuid.uuid4().hex}.mp3"
+#     filepath = os.path.join(audio_dir, filename)
 
-    with open(filepath, "wb") as f:
-        f.write(audio_bytes)
+#     with open(filepath, "wb") as f:
+#         f.write(audio_bytes)
 
-    # Build full URL using request.host_url when called from a request context
-    # If you deploy behind a domain, request.host_url will be like "https://your-app.up.railway.app/"
-    return f"{request.host_url.rstrip('/')}/static/audio/{filename}"
+#     # Build full URL using request.host_url when called from a request context
+#     # If you deploy behind a domain, request.host_url will be like "https://your-app.up.railway.app/"
+#     return f"{request.host_url.rstrip('/')}/static/audio/{filename}"
 
 # -------------------------------
 # Helper: ElevenLabs TTS
@@ -247,25 +247,19 @@ def process_audio():
         }}}
     )
 
-    # Generate TTS via ElevenLabs and return a public URL (preferred)
+    # Generate TTS via ElevenLabs and return base64
     try:
-        ai_audio_url = elevenlabs_tts_save_and_get_url(ai_text)  # returns full URL (uses request.host_url)
-        ai_audio_b64 = None
+        ai_audio_bytes = elevenlabs_tts_get_bytes(ai_text)
+        ai_audio_b64 = base64.b64encode(ai_audio_bytes).decode("utf-8")
     except Exception as e:
-        # Fallback: attempt to get bytes then base64 encode (rare)
-        try:
-            ai_audio_bytes = elevenlabs_tts_get_bytes(ai_text)
-            ai_audio_b64 = base64.b64encode(ai_audio_bytes).decode("utf-8")
-            ai_audio_url = None
-        except Exception as e2:
-            return jsonify({"error": f"TTS generation failed: {str(e2)}"}), 500
+        print(f"TTS Error: {str(e)}")  # Log the actual error
+        return jsonify({"error": f"TTS generation failed: {str(e)}"}), 500
         
 
     # Return response to frontend
     return jsonify({
         "user_text": user_response,
         "ai_text": ai_text,
-        "ai_audio_url": ai_audio_url,
         "ai_audio_b64": ai_audio_b64
     }), 200
 
