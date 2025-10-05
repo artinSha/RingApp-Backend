@@ -10,6 +10,8 @@ import tempfile
 import base64
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
+import subprocess
+
 
 from m4atowav import convert_m4a_to_wav 
 from STT import transcribe_wav
