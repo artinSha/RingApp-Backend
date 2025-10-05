@@ -1,0 +1,14 @@
+{
+  "zombie_apocalypse": {
+    "title": "Zombie Apocalypse",
+    "setting": "A small town overrun by the infected. Sirens, empty streets, boarded windows.",
+    "stakes": "Stay alive, find safe shelter and basic supplies.",
+    "role": "You and the AI are teammates trying to survive."
+  },
+  "restaurant": {
+    "title": "Restaurant Roleplay",
+    "setting": "Busy casual restaurant at lunch. Noise, menus, line at counter.",
+    "stakes": "Order a meal you like and handle small problems politely.",
+    "role": "AI is a patient cashier; the user is the customer."
+  }
+}
