@@ -4,4 +4,6 @@ __pycache__/
 .env
 
 #Google cloud shit
-spring-radar-474120-c4-755c238493d8.json
+config/
+
+*.wav
