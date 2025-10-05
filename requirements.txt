@@ -7,4 +7,3 @@ google-cloud-speech
 google-auth
 google-generativeai
 ffmpeg-python
-re
