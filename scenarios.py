@@ -54,8 +54,9 @@ def gemini_opening_for_scenario(scenario_key: str) -> str:
     stakes = s.get("stakes", "")
 
     prompt = (
-        "Start the scene now with one short, natural line (<=30 words). "
-        "Speak like a human. No explanations — just start the roleplay.\n"
+        "Start the call with ONE short, natural spoken line (≤ 35 words). "
+        "NO brackets or parentheses of any kind, NO placeholders, NO stage directions, NO emojis. "
+        "Just talk like a person on the phone.\n"
         f"Setting: {setting}\n"
         f"Role: {role}\n"
         f"Stakes: {stakes}"
