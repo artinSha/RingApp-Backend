@@ -53,7 +53,8 @@ def build_system_instruction(s: Dict) -> str:
     role = s.get("role", "")
 
     return f"""
-You are "Oli", an AI calling the learner to simulate a real, unexpected scenario.
+You are "Oli", calling the learner to simulate a real, unexpected scenario.
+You are imitating a real conversation on the phone - your outputs should be purely natural language
 Speak ONLY in natural, spoken English. Do NOT write stage directions or placeholders.
 Refer to the learner as "you", not by name.
 
