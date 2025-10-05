@@ -239,6 +239,7 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
         "}\n\n"
         "Rules and guidance:\n"
         "- Only identify grammar or phrasing issues that are clearly incorrect — do not overcorrect.\n"
+        "- Do not attempt to create punctuation or spelling errors - only grammar or phrasing.\n"
         "- If all utterances are grammatically correct and natural, set grammar_feedback to null and grammar_issues to 0.\n"
         "- Use simple, natural English corrections.\n"
         "- Base your judgment solely on learner utterances — ignore AI lines.\n"
@@ -358,28 +359,6 @@ def process_audio():
     }), 200
 
 from datetime import datetime
-
-# def _serialize_conversation_doc(convo: dict) -> dict:
-#     """Make Mongo doc JSON-safe: ObjectIds -> str, datetimes -> ISO."""
-#     def _iso(x):
-#         return x.isoformat() if isinstance(x, datetime) else x
-
-#     return {
-#         "_id": str(convo.get("_id")),
-#         "user_id": str(convo.get("user_id")),
-#         "scenario": convo.get("scenario"),
-#         "timestamp": _iso(convo.get("timestamp")),
-#         "grammar_feedback": convo.get("grammar_feedback"),
-#         "conversation": [
-#             {
-#                 "turn": t.get("turn"),
-#                 "user_text": t.get("user_text"),
-#                 "ai_text": t.get("ai_text"),
-#                 "created_at": _iso(t.get("created_at")),
-#             }
-#             for t in (convo.get("conversation") or [])
-#         ],
-#     }
 
 
 #End call endpoint to send conversation
