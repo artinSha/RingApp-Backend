@@ -9,9 +9,18 @@ import requests
 import tempfile
 import base64
 from werkzeug.utils import secure_filename
+import google.generativeai as genai
 
 from m4atowav import convert_m4a_to_wav 
 from STT import transcribe_wav
+from gemini import (
+    configure_genai,
+    ensure_model_exists,
+    build_system_instruction,
+    load_scenarios,
+    MODEL_ID,
+    SCENARIOS_PATH,
+)
 
 
 # Load environment variables
@@ -102,6 +111,7 @@ def start_call():
 
     return jsonify(payload), 201
 
+
 ALLOWED_EXTENSIONS = {"m4a", "wav"}
 
 def _allowed_file(filename: str) -> bool:
@@ -159,17 +169,55 @@ def transcribe_audio_stt(audio_file):
             except Exception:
                 pass
 
-# -------------------------------
-# Helper: Generates AI response based on string of conversation history thus far
-# -------------------------------
-def generate_ai_text(conversation_context):
-    """
-    Replace with Gemini API call later.
-    Currently just returns dummy AI text.
-    """
-    return "Great! You should look for a safe spot immediately."
 
+# ------------------------- Gemini AI setup
+# -------------------------
+configure_genai()  # uses GEMINI_API or GEMINI_API_KEY
 
+try:
+    SCENARIOS = load_scenarios(SCENARIOS_PATH)
+except Exception:
+    SCENARIOS = {}
+
+_model_cache = {}
+
+def _get_model_for_scenario(scenario_key: str = "General"):
+    """
+    Return a Gemini model configured with a scenario-specific system instruction.
+    Cached per (MODEL_ID, scenario_key).
+    """
+    if scenario_key in SCENARIOS:
+        sys_inst = build_system_instruction(SCENARIOS[scenario_key])
+    else:
+        sys_inst = (
+            "You are 'Ring', a friendly, realistic speaking partner for an ESL learner. "
+            "Reply in simple, natural English (<= 35 words), react to the user's last message, "
+            "and continue the scene briefly with a mix of statements and questions."
+        )
+
+    cache_key = f"{MODEL_ID}::{scenario_key}"
+    model = _model_cache.get(cache_key)
+    if model is None:
+        model = genai.GenerativeModel(MODEL_ID, system_instruction=sys_inst)
+        _model_cache[cache_key] = model
+    return model
+
+def generate_ai_text(conversation_context: str, scenario_key: str = "General") -> str:
+    """
+    Generates the next AI reply from Gemini using a single string prompt.
+    This keeps compatibility with your current /process_audio call.
+    """
+    try:
+        model = _get_model_for_scenario(scenario_key)
+        chat = model.start_chat()
+        resp = chat.send_message(conversation_context or "...")
+        ai_text = (getattr(resp, "text", "") or "").strip()
+        if not ai_text:
+            ai_text = "I couldn’t quite hear that. Could you say it again, briefly?"
+        return ai_text
+    except Exception as e:
+        # Don't crash your request path if Gemini misconfigures
+        return f"(Gemini error: {e})"
 
 # -------------------------------
 # Endpoint: process user audio
