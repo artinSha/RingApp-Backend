@@ -179,6 +179,7 @@ def elevenlabs_tts_save_and_get_url(text, voice_id=None):
 # -------------------------------
 # Endpoint: process user audio
 # -------------------------------
+
 @app.route("/process_audio", methods=["POST"])
 def process_audio():
     # Get form data
@@ -246,14 +247,25 @@ def process_audio():
         }}}
     )
 
-    # Generate TTS via ElevenLabs
-    ai_audio_bytes = elevenlabs_tts(ai_text)
-    ai_audio_b64 = base64.b64encode(ai_audio_bytes).decode("utf-8")  # frontend can use data URI
+    # Generate TTS via ElevenLabs and return a public URL (preferred)
+    try:
+        ai_audio_url = elevenlabs_tts_save_and_get_url(ai_text)  # returns full URL (uses request.host_url)
+        ai_audio_b64 = None
+    except Exception as e:
+        # Fallback: attempt to get bytes then base64 encode (rare)
+        try:
+            ai_audio_bytes = elevenlabs_tts_get_bytes(ai_text)
+            ai_audio_b64 = base64.b64encode(ai_audio_bytes).decode("utf-8")
+            ai_audio_url = None
+        except Exception as e2:
+            return jsonify({"error": f"TTS generation failed: {str(e2)}"}), 500
+        
 
     # Return response to frontend
     return jsonify({
-        "user_text": user_text,
+        "user_text": user_response,
         "ai_text": ai_text,
+        "ai_audio_url": ai_audio_url,
         "ai_audio_b64": ai_audio_b64
     }), 200
 
