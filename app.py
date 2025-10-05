@@ -24,6 +24,7 @@ from gemini import (
     SCENARIOS_PATH,
 )
 from scenarios import (
+    SCENARIOS,
     find_scenario_key_by_title,
     get_model_for_scenario,
     gemini_opening_for_scenario,
@@ -80,10 +81,12 @@ def start_call():
     if not user:
         return jsonify({"error": "invalid user_id"}), 400
 
+    scenario_key = find_scenario_key_by_title(scenario_title)
+
     # Create conversation document
     conv_doc = {
         "user_id": user_id,
-        "scenario": scenario_title,
+        "scenario": scenario_key,
         "conversation": [],  # store AI+user turns
         "timestamp": datetime.now(timezone.utc),  # Changed here
         "grammar_feedback": None
@@ -95,7 +98,7 @@ def start_call():
     # Always generate first AI line
     # -----------------------
     # Map title -> canonical scenario key, then ask Gemini for an opener
-    scenario_key = find_scenario_key_by_title(scenario_title)
+
     ai_text = gemini_opening_for_scenario(scenario_key)
 
     # Save first AI turn
@@ -176,17 +179,65 @@ def transcribe_audio_stt(audio_file):
             except Exception:
                 pass
 
+def _extract_user_utterances(conversation_doc, max_chars: int = 6000) -> str:
+    """
+    Return a single string with only the user's utterances, newest last.
+    Soft-limit total chars to keep prompts reasonable.
+    """
+    buf = []
+    total = 0
+    for t in conversation_doc.get("conversation", []):
+        ut = (t.get("user_text") or "").strip()
+        if ut:
+            if total + len(ut) > max_chars:
+                # Simple truncation from the start if too long
+                # Keep the most recent parts by popping from the beginning
+                while buf and (total + len(ut) > max_chars):
+                    removed = buf.pop(0)
+                    total -= len(removed)
+            buf.append(ut)
+            total += len(ut)
+    return "\n".join(f"- {u}" for u in buf) if buf else "(no user speech captured)"
+
+
+def _build_feedback_prompt(scenario_key: str, user_utterances: str) -> str:
+    """
+    Build a focused prompt asking the model to evaluate grammar/fluency,
+    give corrections, and short actionable tips for the learner.
+    """
+    s = SCENARIOS.get(scenario_key, {})
+    title = s.get("title", scenario_key)
+    setting = s.get("setting", "")
+    stakes = s.get("stakes", "")
+    role = s.get("role", "")
+
+    return (
+        "You are an ESL coach. Evaluate the learner's English based on the conversation below.\n"
+        "Be concise and supportive. Keep the total under ~220 words.\n\n"
+        f"Scenario: {title}\n"
+        f"Setting: {setting}\n"
+        f"Stakes: {stakes}\n"
+        f"Roles: {role}\n\n"
+        "Learner's utterances (chronological):\n"
+        f"{user_utterances}\n\n"
+        "Return JSON with the following keys ONLY:\n"
+        '{\n'
+        '  "cefr_estimate": "A1/A2/B1/B2/C1/C2",\n'
+        '  "strengths": ["short bullet", "..."],\n'
+        '  "issues": ["short bullet describing a consistent issue", "..."],\n'
+        '  "corrections": [\n'
+        '    {"before": "learner sentence (or fragment)", "after": "corrected, natural version"},\n'
+        '    {"before": "...", "after": "..."}\n'
+        '  ],\n'
+        '  "tips": ["1-sentence practice tip", "another tip", "third tip"]\n'
+        '}\n'
+        "Do not include any text outside of the JSON."
+    )
+
 
 # ------------------------- Gemini AI setup
 # -------------------------
 configure_genai()  # uses GEMINI_API or GEMINI_API_KEY
-
-try:
-    SCENARIOS = load_scenarios(SCENARIOS_PATH)
-except Exception:
-    SCENARIOS = {}
-
-_model_cache = {}
     
 def generate_ai_text(conversation_context: str, scenario_key: str = "General") -> str:
     """
@@ -258,9 +309,8 @@ def process_audio():
         if user_text and user_text.strip():
             context_text += f"User: {user_text}\n"
 
-
     # Generate AI response (placeholder)
-    ai_text = generate_ai_text(context_text)
+    ai_text = generate_ai_text(context_text, scenario_key=conversation.get("scenario", "General"))
 
     # Create a new AI-only turn
     new_turn_number = last_turn["turn"] + 1
@@ -291,18 +341,52 @@ def process_audio():
     }), 200
 
 #End call endpoint to send conversation
-@app.route("/end_call", methods = ["POST"])
+@app.route("/end_call", methods=["POST"])
 def end_call():
-    # Get form data
-    conv_id = request.form.get("conv_id")
-
+    conv_id = request.form.get("conv_id") or (request.json or {}).get("conv_id")
     if not conv_id:
         return jsonify({"error": "conv_id is required"}), 400
 
-    # Verify conversation exists
-    conversation = conversations_collection.find_one({"_id": ObjectId(conv_id)})
-    if not conversation:
+    # 1) Load conversation
+    convo = conversations_collection.find_one({"_id": ObjectId(conv_id)})
+    if not convo:
         return jsonify({"error": "Invalid conversation ID"}), 400
+
+    scenario_key = convo.get("scenario", "General")
+
+    # 2) Build feedback prompt (scenario + only user lines)
+    user_utterances = _extract_user_utterances(convo)
+    prompt = _build_feedback_prompt(scenario_key, user_utterances)
+
+    # 3) Ask Gemini for JSON feedback using the SCENARIO model
+    try:
+        model = get_model_for_scenario(scenario_key)
+        chat = model.start_chat()
+        resp = chat.send_message(prompt)
+        feedback_text = (getattr(resp, "text", "") or "").strip()
+    except Exception as e:
+        # If Gemini fails, store a friendly error
+        feedback_text = json.dumps({
+            "error": "feedback_generation_failed",
+            "detail": str(e)[:300]
+        })
+
+    # 4) Try to parse JSON to ensure it’s valid; if not, wrap it
+    try:
+        parsed = json.loads(feedback_text)
+        grammar_feedback = parsed
+    except Exception:
+        # Model didn’t return pure JSON; store raw text for debugging
+        grammar_feedback = {"raw": feedback_text}
+
+    # 5) Save feedback back into the conversation
+    conversations_collection.update_one(
+        {"_id": ObjectId(conv_id)},
+        {"$set": {"grammar_feedback": grammar_feedback}}
+    )
+
+    # 6) Return the feedback to the client
+    return jsonify({"conversation_id": conv_id, "grammar_feedback": grammar_feedback}), 200
 
 
 
