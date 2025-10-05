@@ -225,19 +225,17 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
     role = s.get("role", "")
 
     return (
-        "You are an experienced ESL evaluator assessing a student's spoken English accuracy, "
-        "grammar, and fluency in the given scenario. Analyze the learner’s utterances and respond "
+        "You are an experienced ESL evaluator. Analyze ONLY the learner’s utterances.\n"
         "STRICTLY with valid JSON, using only the keys below — no prose, no markdown, and no explanations.\n\n"
         "Your JSON MUST follow this schema exactly:\n"
         "{\n"
-        '  "success_percentage": int (0–100),\n'
+        '  "success_percentage": int (0-100),\n'
         '  "grammar_feedback": [\n'
         '    {"before": "<learner_sentence_with_error>", "after": "<corrected_sentence>"},\n'
         '    ...\n'
         "  ] OR null if there are no grammatical issues,\n"
         '  "grammar_issues": int (number of actual grammar mistakes found, 0 if none),\n'
-        '  "turns": int (number of user utterances analyzed),\n'
-        '  "conversation": <the full conversation object from MongoDB>\n'
+        '   "turns": int (number of user utterances analyzed),\n'
         "}\n\n"
         "Rules and guidance:\n"
         "- Only identify grammar or phrasing issues that are clearly incorrect — do not overcorrect.\n"
@@ -251,7 +249,6 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
         f"- Stakes: {stakes}\n"
         f"- Roles: {role}\n\n"
         f"Learner’s utterances:\n{user_utterances}\n\n"
-        f"Conversation object:\n{json.dumps(convo, default=str)}"
     )
 
 
@@ -360,6 +357,30 @@ def process_audio():
         "ai_audio_b64": ai_audio_b64
     }), 200
 
+from datetime import datetime
+
+# def _serialize_conversation_doc(convo: dict) -> dict:
+#     """Make Mongo doc JSON-safe: ObjectIds -> str, datetimes -> ISO."""
+#     def _iso(x):
+#         return x.isoformat() if isinstance(x, datetime) else x
+
+#     return {
+#         "_id": str(convo.get("_id")),
+#         "user_id": str(convo.get("user_id")),
+#         "scenario": convo.get("scenario"),
+#         "timestamp": _iso(convo.get("timestamp")),
+#         "grammar_feedback": convo.get("grammar_feedback"),
+#         "conversation": [
+#             {
+#                 "turn": t.get("turn"),
+#                 "user_text": t.get("user_text"),
+#                 "ai_text": t.get("ai_text"),
+#                 "created_at": _iso(t.get("created_at")),
+#             }
+#             for t in (convo.get("conversation") or [])
+#         ],
+#     }
+
 
 #End call endpoint to send conversation
 @app.route("/end_call", methods=["POST"])
@@ -405,8 +426,14 @@ def end_call():
         {"$set": {"grammar_feedback": grammar_feedback}}
     )
 
-    # 6) Return the feedback to the client
-    return jsonify({"conversation_id": conv_id, "grammar_feedback": grammar_feedback}), 200
+    # Only keep the conversation array, not metadata
+    conversation_array = convo.get("conversation", [])
+
+    return jsonify({
+        "conversation_id": conv_id,
+        "grammar_feedback": grammar_feedback,
+        "conversation": conversation_array
+    }), 200
 
 
 
