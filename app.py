@@ -208,8 +208,9 @@ def _extract_user_utterances(conversation_doc, max_chars: int = 6000) -> str:
 
 def _build_feedback_prompt(scenario_key: str, user_utterances: str) -> str:
     """
-    Build a focused prompt asking the model to evaluate grammar/fluency,
-    give corrections, and short actionable tips for the learner.
+    ESL tutor-style evaluation prompt.
+    Returns strictly-JSON guidance: CEFR, TOEFL estimate, strengths, issues,
+    concise corrections, and short practice tips.
     """
     s = SCENARIOS.get(scenario_key, {})
     title = s.get("title", scenario_key)
@@ -218,26 +219,28 @@ def _build_feedback_prompt(scenario_key: str, user_utterances: str) -> str:
     role = s.get("role", "")
 
     return (
-        "You are an ESL coach. Evaluate the learner's English based on the conversation below.\n"
-        "Be concise and supportive. Keep the total under ~220 words.\n\n"
+        "You are an experienced ESL tutor. Evaluate the learner's English based ONLY on the text below.\n"
+        "Keep your feedback practical, supportive, and very concise (≤ 220 words total across all fields).\n"
+        "Focus on: grammar, fluency (naturalness/flow), and vocabulary choice (wording/precision).\n\n"
         f"Scenario: {title}\n"
         f"Setting: {setting}\n"
         f"Stakes: {stakes}\n"
         f"Roles: {role}\n\n"
         "Learner's utterances (chronological):\n"
         f"{user_utterances}\n\n"
-        "Return JSON with the following keys ONLY:\n"
-        '{\n'
-        '  "cefr_estimate": "A1/A2/B1/B2/C1/C2",\n'
+        "Return JSON with the following keys ONLY (no extra text):\n"
+        "{\n"
+        '  "cefr_estimate": "A1|A2|B1|B2|C1|C2",\n'
+        '  "toefl_estimate": {"score_range": "0-120 string like \\"72-85\\"", "confidence": "low|medium|high"},\n'
         '  "strengths": ["short bullet", "..."],\n'
         '  "issues": ["short bullet describing a consistent issue", "..."],\n'
         '  "corrections": [\n'
-        '    {"before": "learner sentence (or fragment)", "after": "corrected, natural version"},\n'
+        '    {"before": "learner sentence or fragment", "after": "corrected, natural version"},\n'
         '    {"before": "...", "after": "..."}\n'
         '  ],\n'
-        '  "tips": ["1-sentence practice tip", "another tip", "third tip"]\n'
-        '}\n'
-        "Do not include any text outside of the JSON."
+        '  "tips": ["1 concise practice tip", "another short tip", "third short tip"]\n'
+        "}\n"
+        "CRITICAL: Respond with JSON ONLY. Do not include backticks or any explanation."
     )
 
 
