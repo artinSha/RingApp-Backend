@@ -251,6 +251,40 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
         f"Learner’s utterances:\n{user_utterances}\n\n"
     )
 
+@app.route("/process_practice", methods=["POST"])
+def process_practice():
+    """
+    Compare what the user said (from m4a) with the provided correct sentence.
+    Takes:
+      - audio (m4a file)
+      - correct_text (string)
+    Returns:
+      - spoken_text (transcribed user speech)
+      - correct_text (the expected phrase)
+      - matched (boolean)
+    """
+    audio_file = request.files.get("audio")
+    correct_text = request.form.get("correct_text")
+
+    if not audio_file or not correct_text:
+        return jsonify({"error": "audio file and correct_text are required"}), 400
+
+    # 1. Transcribe audio directly (no conversion)
+    try:
+        spoken_text = transcribe_audio_stt(audio_file) or ""
+    except Exception as e:
+        return jsonify({"error": f"Transcription failed: {e}"}), 500
+
+    # 2. Simple case-insensitive comparison
+    match = spoken_text.strip().lower() == correct_text.strip().lower()
+
+    # 3. Return result
+    return jsonify({
+        "spoken_text": spoken_text,
+        "correct_text": correct_text,
+        "matched": match
+    }), 200
+
 
 # ------------------------- Gemini AI setup
 # -------------------------
