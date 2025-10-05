@@ -256,33 +256,32 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
 def process_practice():
     """
     Compare what the user said (from m4a) with the provided correct sentence.
-    Takes:
-      - audio (m4a file)
+    Takes (multipart/form-data):
+      - audio (m4a or wav file)
       - correct_text (string)
     Returns:
+      - matched (boolean)
       - spoken_text (transcribed user speech)
       - correct_text (the expected phrase)
-      - matched (boolean)
     """
     audio_file = request.files.get("audio")
-    correct_text = request.form.get("correction_text")
-    user_response = transcribe_audio_stt(audio_file)
+    correct_text = request.form.get("correction_text")  
 
+    # Validate inputs first
     if not audio_file or not correct_text:
-        return jsonify({"error": "audio file and correct_text are required"}), 400
+        return jsonify({"error": "audio and correct_text are required"}), 400
 
-    # 1. Transcribe audio directly (no conversion)
+    # Transcribe (m4a will be converted inside transcribe_audio_stt)
     try:
         spoken_text = transcribe_audio_stt(audio_file) or ""
     except Exception as e:
         return jsonify({"error": f"Transcription failed: {e}"}), 500
 
-    # 2. Simple case-insensitive comparison
-    match = user_response.strip().lower() == correct_text.strip().lower()
+    # Case-insensitive trimmed comparison
+    matched = spoken_text.strip().lower() == correct_text.strip().lower()
 
-    # 3. Return result
     return jsonify({
-        "matched": match
+        "matched": matched,
     }), 200
 
 
