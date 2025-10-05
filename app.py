@@ -161,8 +161,6 @@ def process_audio():
     #Fetch the updated conversation
     conversation = conversations_collection.find_one({"_id": ObjectId(conv_id)})
 
-
-
     # Build conversation context (including the full history)
     context_text = ""
     for turn_data in conversation.get("conversation", []):
