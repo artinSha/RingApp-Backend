@@ -28,6 +28,7 @@ from scenarios import (
     find_scenario_key_by_title,
     get_model_for_scenario,
     gemini_opening_for_scenario,
+    get_evaluator_model
 )
 
 # Load environment variables
@@ -370,9 +371,8 @@ def end_call():
 
     # 3) Ask Gemini for JSON feedback using the SCENARIO model
     try:
-        model = get_model_for_scenario(scenario_key)
-        chat = model.start_chat()
-        resp = chat.send_message(prompt)
+        model = get_evaluator_model()
+        resp = model.generate_content(prompt)
         feedback_text = (getattr(resp, "text", "") or "").strip()
     except Exception as e:
         # If Gemini fails, store a friendly error

@@ -66,3 +66,20 @@ def gemini_opening_for_scenario(scenario_key: str) -> str:
         return (getattr(resp, "text", "") or "").strip() or "Let's begin. What’s happening around you?"
     except Exception as e:
         return f"(Gemini error creating opener: {e})"
+    
+
+def get_evaluator_model():
+    # A clean model that is NOT role-play; it only returns JSON.
+    generation_config = {
+        "response_mime_type": "application/json"
+    }
+    system_inst = (
+        "You are an ESL evaluator. You MUST return strictly valid JSON with the exact keys specified. "
+        "No prose, no backticks, no extra text—JSON only."
+    )
+    return genai.GenerativeModel(
+        MODEL_ID,  # or a more capable Gemini model if you prefer
+        system_instruction=system_inst,
+        generation_config=generation_config
+    )
+
