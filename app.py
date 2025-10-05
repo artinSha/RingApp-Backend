@@ -207,7 +207,7 @@ def _extract_user_utterances(conversation_doc, max_chars: int = 6000) -> str:
     return "\n".join(f"- {u}" for u in buf) if buf else "(no user speech captured)"
 
 
-def _build_feedback_prompt(convo_id: str, scenario_key: str, user_utterances: str) -> str:
+def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str) -> str:
     """
     ESL tutor-style evaluation prompt.
     Returns strictly-JSON guidance: CEFR, TOEFL estimate, strengths, issues,
