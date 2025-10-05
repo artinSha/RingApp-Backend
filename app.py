@@ -12,7 +12,6 @@ from werkzeug.utils import secure_filename
 import google.generativeai as genai
 import subprocess
 import json
-import random
 
 from m4atowav import convert_m4a_to_wav 
 from STT import transcribe_wav
@@ -24,7 +23,11 @@ from gemini import (
     MODEL_ID,
     SCENARIOS_PATH,
 )
-
+from scenarios import (
+    find_scenario_key_by_title,
+    get_model_for_scenario,
+    gemini_opening_for_scenario,
+)
 
 # Load environment variables
 load_dotenv()
@@ -60,19 +63,6 @@ def create_user():
     return jsonify({"user_id": str(res.inserted_id)}), 201
 
 
-def _find_scenario_key_by_title(title: str) -> str:
-    """
-    Map a human-visible title to the canonical scenario key in SCENARIOS.
-    Falls back to a random key, then 'General' if needed.
-    """
-    if not title:
-        return random.choice(list(SCENARIOS.keys())) if SCENARIOS else "General"
-    for key, val in SCENARIOS.items():
-        if val.get("title", "").lower() == title.lower():
-            return key
-    return random.choice(list(SCENARIOS.keys())) if SCENARIOS else "General"
-
-
 """
 Call this endpoint from the frontend once the user accepts the call. First message from AI is sent.
 """
@@ -105,8 +95,8 @@ def start_call():
     # Always generate first AI line
     # -----------------------
     # Map title -> canonical scenario key, then ask Gemini for an opener
-    scenario_key = _find_scenario_key_by_title(scenario_title)
-    ai_text = _gemini_opening_for_scenario(scenario_key)
+    scenario_key = find_scenario_key_by_title(scenario_title)
+    ai_text = gemini_opening_for_scenario(scenario_key)
 
     # Save first AI turn
     conversations_collection.update_one(
@@ -197,53 +187,6 @@ except Exception:
     SCENARIOS = {}
 
 _model_cache = {}
-
-def _get_model_for_scenario(scenario_key: str = "General"):
-    """
-    Return a Gemini model configured with a scenario-specific system instruction.
-    Cached per (MODEL_ID, scenario_key).
-    """
-    if scenario_key in SCENARIOS:
-        sys_inst = build_system_instruction(SCENARIOS[scenario_key])
-    else:
-        sys_inst = (
-            "You are 'Ring', a friendly, realistic speaking partner for an ESL learner. "
-            "Reply in simple, natural English (<= 35 words), react to the user's last message, "
-            "and continue the scene briefly with a mix of statements and questions."
-        )
-
-    cache_key = f"{MODEL_ID}::{scenario_key}"
-    model = _model_cache.get(cache_key)
-    if model is None:
-        model = genai.GenerativeModel(MODEL_ID, system_instruction=sys_inst)
-        _model_cache[cache_key] = model
-    return model
-
-def _gemini_opening_for_scenario(scenario_key: str) -> str:
-    """
-    Ask Gemini to produce the first short line for the chosen scenario.
-    """
-    model = _get_model_for_scenario(scenario_key)
-    chat = model.start_chat()
-
-    s = SCENARIOS.get(scenario_key, {})
-    setting = s.get("setting", "")
-    role = s.get("role", "")
-    stakes = s.get("stakes", "")
-    prompt = (
-        "Start the scene now with one short, natural line (<=30 words). "
-        "Speak like a human. Do not explain rules.\n"
-        "Dive straight into the stakes of the scene.\n"
-        f"Setting: {setting}\n"
-        f"Role: {role}\n"
-        f"Stakes: {stakes}"
-    )
-    try:
-        resp = chat.send_message(prompt)
-        text = (getattr(resp, "text", "") or "").strip()
-        return text or "Okay, let's begin. What's happening around you right now?"
-    except Exception as e:
-        return f"(Gemini error creating opener: {e})"
     
 def generate_ai_text(conversation_context: str, scenario_key: str = "General") -> str:
     """
@@ -251,7 +194,7 @@ def generate_ai_text(conversation_context: str, scenario_key: str = "General") -
     This keeps compatibility with your current /process_audio call.
     """
     try:
-        model = _get_model_for_scenario(scenario_key)
+        model = get_model_for_scenario(scenario_key)
         chat = model.start_chat()
         resp = chat.send_message(conversation_context or "...")
         ai_text = (getattr(resp, "text", "") or "").strip()
