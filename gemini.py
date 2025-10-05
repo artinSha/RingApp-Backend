@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # -------------------------
 # Config / constants
 # -------------------------
-MODEL_ID = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
+MODEL_ID = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash-lite")
 SCENARIOS_PATH = os.getenv("SCENARIOS_PATH", "scenario/scenario.json")
 FORCE_SCENARIO = os.getenv("FORCE_SCENARIO")  # set to a key from scenarios.json to force one
 SEED = os.getenv("RANDOM_SEED")

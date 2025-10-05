@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 import google.generativeai as genai
 import subprocess
 import json
+import re
 
 from m4atowav import convert_m4a_to_wav 
 from STT import transcribe_wav
@@ -251,6 +252,42 @@ def _build_feedback_prompt(conv_id: str, scenario_key: str, user_utterances: str
         f"- Roles: {role}\n\n"
         f"Learner’s utterances:\n{user_utterances}\n\n"
     )
+
+
+def _clean_text(s: str) -> str:
+    return re.sub(r"[^\w\s]", "", s or "").strip().lower()
+
+@app.route("/process_practice", methods=["POST"])
+def process_practice():
+    """
+    Compare what the user said (from m4a) with the provided correct sentence.
+    Takes (multipart/form-data):
+      - audio (m4a or wav file)
+      - correct_text (string)
+    Returns:
+      - matched (boolean)
+      - spoken_text (transcribed user speech)
+      - correct_text (the expected phrase)
+    """
+    audio_file = request.files.get("audio")
+    correct_text = request.form.get("correction_text")  
+
+    # Validate inputs first
+    if not audio_file or not correct_text:
+        return jsonify({"error": "audio and correct_text are required"}), 400
+
+    # Transcribe (m4a will be converted inside transcribe_audio_stt)
+    try:
+        spoken_text = transcribe_audio_stt(audio_file) or ""
+    except Exception as e:
+        return jsonify({"error": f"Transcription failed: {e}"}), 500
+
+    # Case-insensitive trimmed comparison
+    matched = _clean_text(spoken_text) == _clean_text(correct_text)
+
+    return jsonify({
+        "matched": matched,
+    }), 200
 
 
 # ------------------------- Gemini AI setup
