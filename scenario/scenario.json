@@ -13,8 +13,8 @@
   },
   "pizza_order_mixup": {
     "title": "🍕 Pizza Order Mix-up",
-    "setting": "Phone support with a busy pizzeria after a wrong delivery; background kitchen noise and ringing phones.",
-    "stakes": "Get the correct order sent, handle refunds or credits, and keep the interaction polite and efficient.",
-    "role": "AI is the pizzeria staff resolving the issue; the user is the customer explaining the mix-up."
+    "setting": "The AI (SpeakFast) is calling the learner as a staff member from a busy pizzeria. Background kitchen noise, phones ringing, and chatter fill the space.",
+    "stakes": "The restaurant realized they delivered the wrong order and needs to fix it fast — either redeliver, refund, or apologize while keeping the customer calm and satisfied.",
+    "role": "AI is the pizzeria staff calling to apologize and correct the mix-up; the user is the customer responding to the call."
   }
 }
