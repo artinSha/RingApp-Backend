@@ -4,7 +4,11 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
 PROJECT_ID = os.getenv("PROJECT_ID", "spring-radar-474120-c4")
-KEY_PATH = "/Users/andywoochanjung/Desktop/RingApp-Backend/config/spring-radar-474120-c4-70f2fa862484.json"
+
+# Get the directory where this script is located, then go to the key file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+KEY_PATH = os.path.join(BASE_DIR, "config", "spring-radar-474120-c4-70f2fa862484.json")
+
 CLOUD_SCOPE = ["https://www.googleapis.com/auth/cloud-platform"]
 
 def transcribe_wav(path: str):
