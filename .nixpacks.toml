@@ -1,9 +1,2 @@
-[build]
-builder = "nixpacks"
-
-[deploy]
-startCommand = "python app.py"
-
-[nixpacks]
-packages = ["ffmpeg"]
-python = "3.13"
+[phases.setup]
+    nixPkgs = ['...', 'ffmpeg']
