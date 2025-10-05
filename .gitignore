@@ -1,10 +1,7 @@
 # Python
-backend/venv/
-backend/__pycache__/
-backend/.env
-backend/spring-radar-474120-c4-755c238493d8.json
+venv/
+__pycache__/
+.env
 
-# Node / React Native
-frontend/node_modules/
-frontend/.expo/
-frontend/.env
+#Google cloud shit
+spring-radar-474120-c4-755c238493d8.json
