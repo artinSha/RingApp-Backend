@@ -265,7 +265,8 @@ def process_practice():
       - matched (boolean)
     """
     audio_file = request.files.get("audio")
-    correct_text = request.form.get("correct_text")
+    correct_text = request.form.get("correction_text")
+    user_response = transcribe_audio_stt(audio_file)
 
     if not audio_file or not correct_text:
         return jsonify({"error": "audio file and correct_text are required"}), 400
@@ -277,12 +278,10 @@ def process_practice():
         return jsonify({"error": f"Transcription failed: {e}"}), 500
 
     # 2. Simple case-insensitive comparison
-    match = spoken_text.strip().lower() == correct_text.strip().lower()
+    match = user_response.strip().lower() == correct_text.strip().lower()
 
     # 3. Return result
     return jsonify({
-        "spoken_text": spoken_text,
-        "correct_text": correct_text,
         "matched": match
     }), 200
 
